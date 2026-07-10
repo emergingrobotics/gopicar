@@ -1,0 +1,25 @@
+{
+  "servos": {
+    "pan": {
+      "channel": 0,
+      "trim": -11,
+      "dir": -1,
+      "min": -80,
+      "max": 80
+    },
+    "steer": {
+      "channel": 2,
+      "trim": -58,
+      "dir": 1,
+      "min": -30,
+      "max": 30
+    },
+    "tilt": {
+      "channel": 1,
+      "trim": 25,
+      "dir": -1,
+      "min": -40,
+      "max": 85
+    }
+  }
+}
