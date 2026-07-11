@@ -81,6 +81,45 @@ func TestForwardDrivesBothMotors(t *testing.T) {
 	}
 }
 
+func TestSpinTurnsWheelsOppositeDirections(t *testing.T) {
+	b := fake.NewBus()
+	b.Responses[fake.Key(0x14, mcu.RegFirmwareVer)] = []byte{2, 1, 1}
+	chip := fake.NewChip()
+	px, err := picarx.Open(context.Background(), picarx.Options{
+		Bus:         b,
+		Chip:        chip,
+		Calibration: picarx.MeasuredCalibration(),
+		MCU:         mcu.Options{DeviceTreeRoot: t.TempDir()},
+	})
+	if err != nil {
+		t.Fatalf("Open: %v", err)
+	}
+	defer px.Close()
+
+	before := len(b.Txns)
+	if err := px.Spin(context.Background(), 50); err != nil {
+		t.Fatal(err)
+	}
+	// One PWM duty write per rear motor, same as Forward.
+	if got := len(b.Txns) - before; got != 2 {
+		t.Errorf("Spin wrote %d motor txns, want 2", got)
+	}
+	// rate>0 pivots right: left rear drives forward, right rear reverse. Neither
+	// motor is inverted in MeasuredCalibration, so the direction pins settle
+	// opposite -- D4 (left) low = forward, D5 (right) high = reverse. This is what
+	// distinguishes Spin from Forward, where both pins match.
+	left, right := chip.Pins["D4"], chip.Pins["D5"]
+	if left == nil || right == nil {
+		t.Fatalf("motor dir pins not driven (D4=%v D5=%v)", left, right)
+	}
+	if left.Value == right.Value {
+		t.Errorf("Spin(50) dir pins equal (D4=%v D5=%v), want opposite", left.Value, right.Value)
+	}
+	if left.Value != false || right.Value != true {
+		t.Errorf("Spin(50) D4=%v D5=%v, want D4=false (fwd) D5=true (rev)", left.Value, right.Value)
+	}
+}
+
 func TestLineAndCliffStatus(t *testing.T) {
 	px, b := openFake(t)
 	defer px.Close()

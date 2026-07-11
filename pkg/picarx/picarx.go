@@ -189,6 +189,19 @@ func (p *PiCarX) Backward(ctx context.Context, pct float64) error {
 	return p.bothMotors(ctx, -pct)
 }
 
+// Spin pivots the car by driving the rear motors in opposite directions:
+// rate>0 turns right (left wheels forward, right wheels reverse), rate<0 turns
+// left. rate is a signed percentage clamped to -100..100 per motor. The physical
+// sense depends on the motor calibration (Invert), as with Forward/Backward. An
+// Ackermann axle cannot skid sideways in place, so pair this with SetDir to point
+// the steered front wheels into the rotation.
+func (p *PiCarX) Spin(ctx context.Context, rate float64) error {
+	if err := p.motors["left"].Speed(ctx, rate, false); err != nil {
+		return err
+	}
+	return p.motors["right"].Speed(ctx, -rate, false)
+}
+
 func (p *PiCarX) bothMotors(ctx context.Context, signed float64) error {
 	if err := p.motors["left"].Speed(ctx, signed, false); err != nil {
 		return err
