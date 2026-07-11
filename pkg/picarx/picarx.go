@@ -204,6 +204,17 @@ func (p *PiCarX) Stop(ctx context.Context) error {
 	return p.motors["right"].Stop(ctx)
 }
 
+// Spin rotates the car in place by driving the rear motors in opposite
+// directions: pct>0 spins right (clockwise viewed from above), pct<0 spins left.
+// pct is a signed percentage (-100..100). It is independent of the steering
+// angle and overrides any prior Forward/Backward, so it works even while moving.
+func (p *PiCarX) Spin(ctx context.Context, pct float64) error {
+	if err := p.motors["left"].Speed(ctx, pct, false); err != nil {
+		return err
+	}
+	return p.motors["right"].Speed(ctx, -pct, false)
+}
+
 // Ramp linearly changes both motors' speed from `from` to `to` (signed pct)
 // over dur, in ~20 ms steps. Honors context cancellation. A negative speed is
 // reverse; ensure the path is clear before calling.
